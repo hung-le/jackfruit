@@ -1,0 +1,5 @@
+avahi      305     1  0 08:01 ?        00:00:04 avahi-daemon: running [jacktrip.local]
+root       520     1  0 08:01 ?        00:00:21 /usr/local/bin/jacktrip-agent
+pi        3697  3690  0 13:52 ?        00:00:00 bash -c /usr/bin/ps -ef | grep jack
+pi        3699  3697  0 13:52 ?        00:00:00 grep jack
+
