@@ -45,6 +45,9 @@ import com.jcraft.jsch.JSchException;
 public class JackFruitMain extends JFrame implements WindowListener, JackFruitEventHandler {
     private static final Logger LOGGER = LogManager.getLogger(JackFruitMain.class);
 
+//    private static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME = "192.168.1.90";
+    static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME = "jacktrip.local";
+
     private class Command {
         @Override
         public String toString() {
@@ -160,10 +163,11 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
     private boolean appIsReady = false;
     private JackfruitEventListener jackfruitEventListener;
-    private boolean autoLogin = false;
+    private boolean autoLogin = true;
     private JLabel statusLabel;
     private JTextField commandTf;
     private JButton commandButton;
+    public static final String DEFAULT_LOOPBACK_TEST_SERVER = "13.52.186.20";
 
     public JackFruitMain(String title) throws HeadlessException {
         super(title);
@@ -171,8 +175,9 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         this.commands = new Command[] { new Command("Get interface info", "/usr/sbin/ifconfig -a"),
                 new Command("Get routing info", "/usr/bin/netstat -rn"),
                 new Command("Ping gateway", "/usr/bin/ping -c 3 192.168.1.254"),
-                new Command("Ping loopback test server", "/usr/bin/ping -c 3 54.193.29.161"),
-                new Command("Get process info", "/usr/bin/ps -ef | grep jack"), };
+                new Command("Ping loopback test server", "/usr/bin/ping -c 3 " + DEFAULT_LOOPBACK_TEST_SERVER),
+                new Command("Get process info (jack only)", "/usr/bin/ps -ef | grep jack"),
+                new Command("Get process info (all)", "/usr/bin/ps -ef"), };
 
         this.jackfruitEventListener = new JackfruitEventListener(JackFruitMain.this);
         this.jackfruitEventListener.register();
@@ -309,6 +314,13 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         // if logon successfully
         if (loginDialog.isSucceeded()) {
             connectionStateChanged(ConnectionState.CONNECTED);
+            SwingUtilities.invokeLater(new Runnable() {
+
+                @Override
+                public void run() {
+                    textArea.setText("");
+                }
+            });
 //          this.connectionState = ConnectionState.CONNECTED;
 //            updateConnectionUi();
         } else {
@@ -505,7 +517,8 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
         if (!isConnected()) {
             textArea.setText("");
-            textArea.append("Trying to connect to my jacktrip device. Please wait ...");
+            textArea.append("Trying to connect to my jacktrip device" + " (" + this.loginDialog.getHostName() + ")"
+                    + ". Please wait ...");
 
             final Component root = SwingUtilities.getRoot(JackFruitMain.this);
 
@@ -519,7 +532,7 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
                     ConnectionResult connectionResult = null;
                     try {
 //                            String hostName = "jacktrip.local";
-                        String hostName = "192.168.1.90";
+                        String hostName = DEFAULT_JACKTRIP_DEVICE_HOSTNAME;
                         connectionResult = authenticator.authenticate(hostName, "pi", "jacktrip");
                     } finally {
                         root.setEnabled(true);
@@ -578,12 +591,15 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
             public void run() {
                 try {
                     String result = jackTripConnection.runCommand(command);
+                    textArea.append("\n");
                     textArea.append(result);
                 } catch (JSchException e) {
                     LOGGER.info(e, e);
+                    textArea.append("\n");
                     textArea.append(e.getMessage());
                 } catch (IOException e) {
                     LOGGER.info(e, e);
+                    textArea.append("\n");
                     textArea.append(e.getMessage());
                 }
             }

@@ -14,7 +14,7 @@ public class JackTrippConnectionTest {
             System.out.println(jacktrip.runCommand("/usr/bin/netstat -rn"));
             System.out.println(jacktrip.runCommand("/usr/bin/ping -c 3 192.168.1.254"));
             // loopback: 54.193.29.161
-            System.out.println(jacktrip.runCommand("/usr/bin/ping -c 3 54.193.29.161"));
+            System.out.println(jacktrip.runCommand("/usr/bin/ping -c 3 " + JackFruitMain.DEFAULT_LOOPBACK_TEST_SERVER));
             System.out.println(jacktrip.runCommand("/usr/bin/ps -ef | grep jack"));
 
         } catch (Exception e) {

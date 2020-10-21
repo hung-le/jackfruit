@@ -21,7 +21,7 @@ public class JackTripConnection implements Closeable {
 
     private static final String DEFAULT_USERNAME = "pi";
 
-    private static final String DEFAULT_HOSTNAME = "jacktrip.local";
+    private static final String DEFAULT_HOSTNAME = JackFruitMain.DEFAULT_JACKTRIP_DEVICE_HOSTNAME;
 
     private Session session;
 
