@@ -22,11 +22,7 @@ import javax.swing.border.LineBorder;
 
 public class LoginDialog extends JDialog {
 
-    private static final String DEFAULT_PASSWORD = "jacktrip";
-
-    private static final String DEFAULT_USERNAME = "pi";
-
-    private static final String DEFAULT_HOSTNAME = JackFruitMain.DEFAULT_JACKTRIP_DEVICE_HOSTNAME;
+//    private static final String DEFAULT_HOSTNAME = JackFruitMain.DEFAULT_JACKTRIP_DEVICE_HOSTNAME;
 
     private JTextField tfHostName;
 
@@ -41,8 +37,18 @@ public class LoginDialog extends JDialog {
 
     private Authenticator authenticator;
 
-    public LoginDialog(Frame parent, Authenticator authenticator) {
+    private final String hostName;
+
+    private final String userName;
+
+    private final String password;
+
+    public LoginDialog(Frame parent, String hostName, String userName, String password, Authenticator authenticator) {
         super(parent, "Login", true);
+
+        this.hostName = hostName;
+        this.userName = userName;
+        this.password = password;
 
         this.authenticator = authenticator;
 
@@ -137,7 +143,7 @@ public class LoginDialog extends JDialog {
         cs.gridwidth = 2;
         view.add(textField, cs);
         tfHostName = textField;
-        tfHostName.setText(DEFAULT_HOSTNAME);
+        tfHostName.setText(this.hostName);
 
         label = new JLabel("Username: ");
         cs.gridx = 0;
@@ -151,7 +157,7 @@ public class LoginDialog extends JDialog {
         cs.gridwidth = 2;
         view.add(textField, cs);
         tfUserName = textField;
-        tfUserName.setText(DEFAULT_USERNAME);
+        tfUserName.setText(this.userName);
 
         label = new JLabel("Password: ");
         cs.gridx = 0;
@@ -166,7 +172,7 @@ public class LoginDialog extends JDialog {
         view.add(pwField, cs);
         view.setBorder(new LineBorder(Color.GRAY));
         tfPassword = pwField;
-        tfPassword.setText(DEFAULT_PASSWORD);
+        tfPassword.setText(this.password);
 
         return view;
     }

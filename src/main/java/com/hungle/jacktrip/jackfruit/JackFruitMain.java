@@ -48,30 +48,6 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 //    private static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME = "192.168.1.90";
     static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME = "jacktrip.local";
 
-    private class Command {
-        @Override
-        public String toString() {
-            return getLabel();
-        }
-
-        private final String label;
-        private final String command;
-
-        private Command(String label, String command) {
-            super();
-            this.label = label;
-            this.command = command;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-
-        public String getCommand() {
-            return command;
-        }
-    }
-
     private final Command[] commands;
 
     private final class JackTripCommand extends AbstractAction {
@@ -84,12 +60,13 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
         @Override
         public void actionPerformed(ActionEvent event) {
-//            final String command = "/usr/sbin/ifconfig -a";
             runCommand(command);
         }
     }
 
     private final class MyAuthenticator implements Authenticator {
+        private ExecutorService executor = Executors.newSingleThreadExecutor();
+
         @Override
         public ConnectionResult authenticate(String hostName, String userName, String password) {
             Future<ConnectionResult> future = authenticateUsingFuture(hostName, userName, password);
@@ -135,12 +112,12 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
     }
 
     public class JackfruitConnectionEvent extends AbstractEbEvent {
+        private ConnectionState connectionState;
+
         public JackfruitConnectionEvent(ConnectionState connectionState) {
             super();
             this.connectionState = connectionState;
         }
-
-        private ConnectionState connectionState;
 
         @Override
         public String toString() {
@@ -155,7 +132,6 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
     private LoginDialog loginDialog;
     private Authenticator authenticator;
 
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
     private ExecutorService eventExecutor = Executors.newCachedThreadPool();
 
     private JMenu commandMenu;
@@ -167,17 +143,27 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
     private JLabel statusLabel;
     private JTextField commandTf;
     private JButton commandButton;
+
+    static final String DEFAULT_PASSWORD = "jacktrip";
+
+    static final String DEFAULT_USERNAME = "pi";
     public static final String DEFAULT_LOOPBACK_TEST_SERVER = "13.52.186.20";
 
     public JackFruitMain(String title) throws HeadlessException {
         super(title);
 
         this.commands = new Command[] { new Command("Get interface info", "/usr/sbin/ifconfig -a"),
-                new Command("Get routing info", "/usr/bin/netstat -rn"),
-                new Command("Ping gateway", "/usr/bin/ping -c 3 192.168.1.254"),
-                new Command("Ping loopback test server", "/usr/bin/ping -c 3 " + DEFAULT_LOOPBACK_TEST_SERVER),
-                new Command("Get process info (jack only)", "/usr/bin/ps -ef | grep jack"),
-                new Command("Get process info (all)", "/usr/bin/ps -ef"), };
+                new Command("Network - Get routing info", "/usr/bin/netstat -rn"),
+                new Command("Network - Ping gateway", "/usr/bin/ping -c 3 192.168.1.254"),
+                new Command("Network - Ping loopback test server",
+                        "/usr/bin/ping -c 3 " + DEFAULT_LOOPBACK_TEST_SERVER),
+                new Command("Process - Get process info (jack only)", "/usr/bin/ps -ef | grep jack"),
+                new Command("Process - Get process info (all)", "/usr/bin/ps -ef"),
+                new Command("Log - jacktrip-agent", "/usr/bin/journalctl -t jacktrip-agent"),
+                new Command("Log - jacktrip-patches", "/usr/bin/journalctl -t jacktrip-patches"),
+                new Command("Log - jack", "/usr/bin/journalctl -t jack"),
+                new Command("Log - jacktrip", "/usr/bin/journalctl -t jacktrip"),
+                new Command("Log - jamulus", "/usr/bin/journalctl -t jamulus"), };
 
         this.jackfruitEventListener = new JackfruitEventListener(JackFruitMain.this);
         this.jackfruitEventListener.register();
@@ -304,11 +290,6 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
     }
 
     private void doConnectWithDialog() {
-        if (this.loginDialog == null) {
-            Frame frame = JackFruitMain.this;
-            this.loginDialog = new LoginDialog(frame, authenticator);
-        }
-
         loginDialog.showDialog();
 
         // if logon successfully
@@ -502,6 +483,15 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
         if (!appIsReady) {
             appIsReady = true;
+            if (this.loginDialog == null) {
+                Frame frame = JackFruitMain.this;
+                String hostName = System.getProperty("jackfruit.hostName", DEFAULT_JACKTRIP_DEVICE_HOSTNAME);
+                String userName = System.getProperty("jackfruit.userName", DEFAULT_USERNAME);
+                String password = System.getProperty("jackfruit.password", DEFAULT_PASSWORD);
+                
+                LOGGER.info("hostName=" + hostName);
+                this.loginDialog = new LoginDialog(frame, hostName, userName, password, authenticator);
+            }
 
             if (autoLogin) {
                 autoLogin();
@@ -510,11 +500,6 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
     }
 
     private void autoLogin() {
-        if (this.loginDialog == null) {
-            Frame frame = JackFruitMain.this;
-            this.loginDialog = new LoginDialog(frame, authenticator);
-        }
-
         if (!isConnected()) {
             textArea.setText("");
             textArea.append("Trying to connect to my jacktrip device" + " (" + this.loginDialog.getHostName() + ")"
@@ -531,9 +516,10 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
                 public void run() {
                     ConnectionResult connectionResult = null;
                     try {
-//                            String hostName = "jacktrip.local";
-                        String hostName = DEFAULT_JACKTRIP_DEVICE_HOSTNAME;
-                        connectionResult = authenticator.authenticate(hostName, "pi", "jacktrip");
+                        String hostName = loginDialog.getHostName();
+                        String userName = loginDialog.getUserName();
+                        String password = loginDialog.getPassword();
+                        connectionResult = authenticator.authenticate(hostName, userName, password);
                     } finally {
                         root.setEnabled(true);
                         root.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
