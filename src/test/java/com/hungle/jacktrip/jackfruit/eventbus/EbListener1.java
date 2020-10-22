@@ -8,7 +8,7 @@ public class EbListener1 extends EbListener {
     private static final Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger(EbListener1.class);
 
     private int counter = 0;
-    
+
     @Subscribe
     public void receivedEvent1(EbEvent1 event) {
         LOGGER.info("LISTENER - > receivedEvent1");

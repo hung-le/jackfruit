@@ -48,6 +48,12 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 //    private static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME = "192.168.1.90";
     static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME = "jacktrip.local";
 
+    static final String DEFAULT_PASSWORD = "jacktrip";
+
+    static final String DEFAULT_USERNAME = "pi";
+
+    public static final String DEFAULT_LOOPBACK_TEST_SERVER = "13.52.186.20";
+
     private final Command[] commands;
 
     private final class JackTripCommand extends AbstractAction {
@@ -144,26 +150,34 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
     private JTextField commandTf;
     private JButton commandButton;
 
-    static final String DEFAULT_PASSWORD = "jacktrip";
+    private DefaultComboBoxModel<Command> commandsModel;
 
-    static final String DEFAULT_USERNAME = "pi";
-    public static final String DEFAULT_LOOPBACK_TEST_SERVER = "13.52.186.20";
+    private JComboBox<Command> commandsComboBox;
 
     public JackFruitMain(String title) throws HeadlessException {
         super(title);
 
-        this.commands = new Command[] { new Command("Get interface info", "/usr/sbin/ifconfig -a"),
+        this.commands = new Command[] {
+                // Log
+                new Command("Log - jacktrip", "/usr/bin/journalctl -t jacktrip"),
+                new Command("Log - jamulus", "/usr/bin/journalctl -t jamulus"),
+                new Command("Log - jack", "/usr/bin/journalctl -t jack"),
+                new Command("Log - jacktrip-agent", "/usr/bin/journalctl -t jacktrip-agent"),
+                new Command("Log - jacktrip-patches", "/usr/bin/journalctl -t jacktrip-patches"),
+                // Sound
+                new Command("Sound - Get Volumes", "/usr/bin/amixer get Digital"),
+                new Command("Sound - List Devices", "/usr/bin/aplay -l"),
+                new Command("Sound - List PCMs", "/usr/bin/aplay -L"),
+                // Network
+                new Command("Network - Get interface info", "/usr/sbin/ifconfig -a"),
                 new Command("Network - Get routing info", "/usr/bin/netstat -rn"),
                 new Command("Network - Ping gateway", "/usr/bin/ping -c 3 192.168.1.254"),
                 new Command("Network - Ping loopback test server",
-                        "/usr/bin/ping -c 3 " + DEFAULT_LOOPBACK_TEST_SERVER),
+                        "/usr/bin/ping -c 3 "
+                                + System.getProperty("jackfruit.testServer", DEFAULT_LOOPBACK_TEST_SERVER)),
+                // Process
                 new Command("Process - Get process info (jack only)", "/usr/bin/ps -ef | grep jack"),
-                new Command("Process - Get process info (all)", "/usr/bin/ps -ef"),
-                new Command("Log - jacktrip-agent", "/usr/bin/journalctl -t jacktrip-agent"),
-                new Command("Log - jacktrip-patches", "/usr/bin/journalctl -t jacktrip-patches"),
-                new Command("Log - jack", "/usr/bin/journalctl -t jack"),
-                new Command("Log - jacktrip", "/usr/bin/journalctl -t jacktrip"),
-                new Command("Log - jamulus", "/usr/bin/journalctl -t jamulus"), };
+                new Command("Process - Get process info (all)", "/usr/bin/ps -ef"), };
 
         this.jackfruitEventListener = new JackfruitEventListener(JackFruitMain.this);
         this.jackfruitEventListener.register();
@@ -299,7 +313,12 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
                 @Override
                 public void run() {
+                    // clear text
                     textArea.setText("");
+                    Object selectedItem = commandsComboBox.getSelectedItem();
+                    if (selectedItem == null) {
+                        commandsComboBox.setSelectedIndex(0);
+                    }
                 }
             });
 //          this.connectionState = ConnectionState.CONNECTED;
@@ -373,13 +392,13 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         JPanel commandView = new JPanel();
         commandView.setLayout(new BoxLayout(commandView, BoxLayout.LINE_AXIS));
         view.add(commandView, BorderLayout.NORTH);
-        DefaultComboBoxModel<Command> commandsModel = new DefaultComboBoxModel<>();
+        commandsModel = new DefaultComboBoxModel<>();
         commandsModel.addAll(Arrays.asList(commands));
-        JComboBox<Command> commandsComboBox = new JComboBox<>(commandsModel);
+        commandsComboBox = new JComboBox<>(commandsModel);
         commandsComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Command command = (Command) commandsModel.getSelectedItem();
+                Command command = (Command) commandsComboBox.getSelectedItem();
                 LOGGER.info("COMMAND - SELECTED - " + command.getCommand());
                 commandTf.setText(command.getCommand());
                 if (connectionState == ConnectionState.CONNECTED) {
@@ -488,7 +507,7 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
                 String hostName = System.getProperty("jackfruit.hostName", DEFAULT_JACKTRIP_DEVICE_HOSTNAME);
                 String userName = System.getProperty("jackfruit.userName", DEFAULT_USERNAME);
                 String password = System.getProperty("jackfruit.password", DEFAULT_PASSWORD);
-                
+
                 LOGGER.info("hostName=" + hostName);
                 this.loginDialog = new LoginDialog(frame, hostName, userName, password, authenticator);
             }
@@ -528,7 +547,12 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
                     if ((connectionResult != null) && (connectionResult.isConnected())) {
                         JOptionPane.showMessageDialog(root, "You have successfully logged in.", "Login",
                                 JOptionPane.INFORMATION_MESSAGE);
+
                         textArea.setText("");
+                        Object selectedItem = commandsComboBox.getSelectedItem();
+                        if (selectedItem == null) {
+                            commandsComboBox.setSelectedIndex(0);
+                        }
 
                         connectionStateChanged(ConnectionState.CONNECTED);
                     } else {

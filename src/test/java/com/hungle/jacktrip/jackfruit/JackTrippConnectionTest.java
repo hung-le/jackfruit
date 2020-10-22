@@ -2,12 +2,14 @@ package com.hungle.jacktrip.jackfruit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class JackTrippConnectionTest {
     private static final Logger LOGGER = LogManager.getLogger(JackTrippConnectionTest.class);
 
     @Test
+    @Ignore
     public void testConnection() {
         try (JackTripConnection jacktrip = new JackTripConnection("192.168.1.90")) {
             System.out.println(jacktrip.runCommand("/usr/sbin/ifconfig -a"));

@@ -6,7 +6,7 @@ public class EbEvents {
     private static final EbEvents INSTANCE = new EbEvents();
 
     private final EventBus eventBus = new EventBus();
-    
+
     private EbEvents() {
         super();
     }
