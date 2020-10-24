@@ -56,20 +56,6 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
     private final Command[] commands;
 
-    private final class JackTripCommand extends AbstractAction {
-        private final String command;
-
-        private JackTripCommand(String name, String command) {
-            super(name);
-            this.command = command;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent event) {
-            runCommand(command);
-        }
-    }
-
     private final class MyAuthenticator implements Authenticator {
         private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -154,30 +140,12 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
     private JComboBox<Command> commandsComboBox;
 
+    static final String JACKFRUIT_TEST_SERVER = "jackfruit.testServer";
+
     public JackFruitMain(String title) throws HeadlessException {
         super(title);
 
-        this.commands = new Command[] {
-                // Log
-                new Command("Log - jacktrip", "/usr/bin/journalctl -t jacktrip"),
-                new Command("Log - jamulus", "/usr/bin/journalctl -t jamulus"),
-                new Command("Log - jack", "/usr/bin/journalctl -t jack"),
-                new Command("Log - jacktrip-agent", "/usr/bin/journalctl -t jacktrip-agent"),
-                new Command("Log - jacktrip-patches", "/usr/bin/journalctl -t jacktrip-patches"),
-                // Sound
-                new Command("Sound - Get Volumes", "/usr/bin/amixer get Digital"),
-                new Command("Sound - List Devices", "/usr/bin/aplay -l"),
-                new Command("Sound - List PCMs", "/usr/bin/aplay -L"),
-                // Network
-                new Command("Network - Get interface info", "/usr/sbin/ifconfig -a"),
-                new Command("Network - Get routing info", "/usr/bin/netstat -rn"),
-                new Command("Network - Ping gateway", "/usr/bin/ping -c 3 192.168.1.254"),
-                new Command("Network - Ping loopback test server",
-                        "/usr/bin/ping -c 3 "
-                                + System.getProperty("jackfruit.testServer", DEFAULT_LOOPBACK_TEST_SERVER)),
-                // Process
-                new Command("Process - Get process info (jack only)", "/usr/bin/ps -ef | grep jack"),
-                new Command("Process - Get process info (all)", "/usr/bin/ps -ef"), };
+        this.commands = createCommands();
 
         this.jackfruitEventListener = new JackfruitEventListener(JackFruitMain.this);
         this.jackfruitEventListener.register();
@@ -193,6 +161,10 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         this.authenticator = new MyAuthenticator();
 
         addWindowListener(this);
+    }
+
+    protected Command[] createCommands() {
+        return Commands.createCommands();
     }
 
     private void buildMenuBar(JMenuBar menuBar) {
@@ -235,7 +207,14 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         JMenuItem menuItem = null;
 
         for (Command command : commands) {
-            menuItem = new JMenuItem(new JackTripCommand(command.getLabel(), command.getCommand()));
+            menuItem = new JMenuItem(new JackTripCommand(command.getLabel(), command.getCommand()) {
+
+                @Override
+                public void runCommand(String command) {
+                    JackFruitMain.this.runCommand(command);
+                }
+
+            });
             menu.add(menuItem);
         }
     }
@@ -403,6 +382,11 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
                 commandTf.setText(command.getCommand());
                 if (connectionState == ConnectionState.CONNECTED) {
                     commandButton.setEnabled(true);
+                }
+                String comment = command.getComment();
+                if ((comment != null) && (comment.length() > 0)) {
+                    textArea.setText("");
+                    textArea.append(comment);
                 }
             }
         });
@@ -614,6 +598,10 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
                 }
             }
         });
+    }
+
+    static String getLoopbackTestServer() {
+        return System.getProperty(JACKFRUIT_TEST_SERVER, DEFAULT_LOOPBACK_TEST_SERVER);
     }
 
 }

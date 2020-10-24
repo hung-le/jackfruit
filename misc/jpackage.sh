@@ -1,6 +1,7 @@
 #!/bin/sh
 
-dest=../target/jpackage
+target=../target
+dest=${target}/jpackage
 
 rm -rf ${dest}
 
@@ -13,6 +14,6 @@ ${jpackage} \
   --type pkg \
   --dest ${dest} \
   --verbose \
-  -i ./target/ \
+  -i ${target} \
   --name jackfruit \
   --main-jar jackfruit-0.0.1-SNAPSHOT.jar
