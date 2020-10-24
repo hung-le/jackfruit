@@ -19,6 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
@@ -33,6 +34,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -359,6 +361,7 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
     }
 
     private void buildMainView(Container parent) {
+        Border border = null;
 
         JPanel view = new JPanel();
         Dimension preferredSize = new Dimension(600, 400);
@@ -366,10 +369,16 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         view.setPreferredSize(preferredSize);
         view.setLayout(new BorderLayout());
 
+        border = BorderFactory.createEmptyBorder(3, 3, 3, 3);
+        view.setBorder(border);
+
         parent.add(view);
 
         JPanel commandView = new JPanel();
         commandView.setLayout(new BoxLayout(commandView, BoxLayout.LINE_AXIS));
+        border = BorderFactory.createTitledBorder("Command");
+        commandView.setBorder(border);
+
         view.add(commandView, BorderLayout.NORTH);
         commandsModel = new DefaultComboBoxModel<>();
         commandsModel.addAll(Arrays.asList(commands));
@@ -384,8 +393,8 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
                     commandButton.setEnabled(true);
                 }
                 String comment = command.getComment();
+                textArea.setText("");
                 if ((comment != null) && (comment.length() > 0)) {
-                    textArea.setText("");
                     textArea.append(comment);
                 }
             }

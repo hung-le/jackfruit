@@ -27,7 +27,9 @@ public class Commands {
                 new Command("Network - Ping loopback test server",
                         "/usr/bin/ping -c 3 " + JackFruitMain.getLoopbackTestServer()),
                 // Process
-                new Command("Process - Get process info (jack only)", "/usr/bin/ps -ef | grep jack"),
-                new Command("Process - Get process info (all)", "/usr/bin/ps -ef"), };
+                new Command("Process - Get process info (jack only)", "/usr/bin/ps -ef | grep jack",
+                        "Get process info (jack only): list process limited to matching \"jack\".\n"),
+                new Command("Process - Get process info (all)", "/usr/bin/ps -ef",
+                        "Get process info (all): list all processes.\n"), };
     }
 }
