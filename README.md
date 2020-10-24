@@ -1,3 +1,3 @@
 # jackfruit
 
-See the [wiki page](wiki)
+See the [wiki page](https://github.com/hung-le/jackfruit/wiki)
