@@ -24,17 +24,21 @@ public class Commands {
                 // aplay /var/tmp/test-mic.wav
                 new Command("Sound - Test playback", "/usr/bin/aplay /var/tmp/test-mic.wav",
                         "Playback the 10 seconds recording. No server/network.\n"),
-                new Command("Sound - List Devices", "/usr/bin/aplay -l", "List sound devices."),
-                new Command("Sound - List PCMs", "/usr/bin/aplay -L", "List PCMs"),
+                new Command("Sound - List Devices", "/usr/bin/aplay -l", "List sound devices.\n"),
+                new Command("Sound - List PCMs", "/usr/bin/aplay -L", "List PCMs.\n"),
                 // Network
-                new Command("Network - Get interface info", "/usr/sbin/ifconfig -a", "To confirm IP's, MAC address"),
+                new Command("Network - Get interface info", "/usr/sbin/ifconfig -a", "To confirm IP's, MAC address.\n"),
                 new Command("Network - Get routing info", "/usr/bin/netstat -rn",
-                        "To verify current routing info.\nUseful for getting the local gateway IP."),
+                        "To verify current routing info.\nUseful for getting the local gateway IP.\n"),
                 new Command("Network - Ping gateway", "/usr/bin/ping -c 3 " + "192.168.1.254",
-                        "Ping from the box to local gateway."),
+                        "Ping from the box to local gateway.\n"),
                 new Command("Network - Ping loopback test server",
                         "/usr/bin/ping -c 3 " + JackFruitMain.getLoopbackTestServer(),
-                        "To ping the loopback test server. Note the IP might need to be adjusted."),
+                        "To ping the loopback test server. Note the IP might need to be adjusted.\n"),
+                // netcat -zv -w 5 13.52.186.20 4464
+                new Command("Network - Check TCP port 4464",
+                        "/usr/bin/netcat -zv -w 5 " + JackFruitMain.getLoopbackTestServer() + " 4464",
+                        "Check to see if TCP connection can be made to the loopback test server.\nNote the IP might need to be adjusted.\n"),
                 // Process
                 new Command("Process - Get process info (jack only)", "/usr/bin/ps -ef | grep jack",
                         "Get process info (jack only): list process limited to matching \"jack\".\n"),

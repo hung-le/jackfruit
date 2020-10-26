@@ -65,10 +65,11 @@ public class JackTripConnection implements Closeable {
         LOGGER.info("Connected!");
     }
 
-    public String runCommand(String command) throws JSchException, IOException {
+    public String[] runCommand(String command) throws JSchException, IOException {
         LOGGER.info("> command=" + command);
 
-        String result = "";
+        String resultOut = "";
+        String resultErr = "";
 
         if (!session.isConnected()) {
             throw new RuntimeException("Not connected to an open session.  Call open() first!");
@@ -83,7 +84,8 @@ public class JackTripConnection implements Closeable {
 
 //        PrintStream out = new PrintStream(channel.getOutputStream());
             InputStream in = channel.getInputStream(); // channel.getInputStream();
-
+            InputStream err = channel.getErrStream();
+            
             channel.connect();
 
             // you can also send input to your running process like so:
@@ -91,7 +93,8 @@ public class JackTripConnection implements Closeable {
             // out.println(someInputToProcess);
             // out.flush();
 
-            result = getChannelOutput(channel, in, 1000L);
+            resultOut = getChannelOutput(channel, in, 1000L);
+            resultErr = getChannelOutput(channel, err, 1000L);
         } finally {
             if (channel != null) {
                 channel.disconnect();
@@ -100,6 +103,9 @@ public class JackTripConnection implements Closeable {
 
         LOGGER.info("< command=" + command);
 
+        String[] result = new String[2];
+        result[0] = resultOut;
+        result[1] = resultErr;
         return result;
     }
 

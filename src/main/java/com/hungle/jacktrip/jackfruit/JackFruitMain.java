@@ -687,21 +687,27 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
             @Override
             public void run() {
-                String result = null;
+                String[] result = null;
                 final long start = System.currentTimeMillis();
                 try {
                     result = jackTripConnection.runCommand(command);
                 } catch (Exception e) {
                     LOGGER.info(e, e);
-                    result = e.getMessage();
+                    result[1] = e.getMessage();
                 } finally {
                     commandStart = -1L;
-                    final String message = result;
+                    final String[] message = result;
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            textArea.append("\n");
-                            textArea.append(message);
+//                            textArea.append("\n");
+
+                            for (String msg : message) {
+                                if ((msg != null) && (msg.length() > 0)) {
+                                    textArea.append("\n");
+                                    textArea.append(msg);
+                                }
+                            }
 
                             long delta = System.currentTimeMillis() - start;
 
