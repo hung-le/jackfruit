@@ -1,7 +1,11 @@
 #!/bin/sh
 
-target=../target
-dest=${target}/jpackage
+in=in
+dest=out
+
+rm -rf ${in}
+mkdir -p ${in}
+cp ../target/jackfruit-0.0.1-SNAPSHOT.jar ${in}
 
 rm -rf ${dest}
 
@@ -14,6 +18,8 @@ ${jpackage} \
   --type pkg \
   --dest ${dest} \
   --verbose \
-  -i ${target} \
+  -i ${in} \
+  --app-version 0.1 \
+  --vendor 'Hung Le' \
   --name jackfruit \
   --main-jar jackfruit-0.0.1-SNAPSHOT.jar

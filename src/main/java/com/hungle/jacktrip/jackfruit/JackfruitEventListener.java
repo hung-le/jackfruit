@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.common.eventbus.DeadEvent;
 import com.google.common.eventbus.Subscribe;
-import com.hungle.jacktrip.jackfruit.JackFruitMain.JackfruitConnectionEvent;
 import com.hungle.jacktrip.jackfruit.eventbus.EbListener;
 
 public class JackfruitEventListener extends EbListener {

@@ -7,11 +7,14 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.HeadlessException;
+import java.awt.Image;
+import java.awt.Taskbar;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -34,20 +37,24 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.border.Border;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
-import com.hungle.jacktrip.jackfruit.eventbus.AbstractEbEvent;
 import com.jcraft.jsch.JSchException;
 
 public class JackFruitMain extends JFrame implements WindowListener, JackFruitEventHandler {
     private static final Logger LOGGER = LogManager.getLogger(JackFruitMain.class);
 
-//    private static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME = "192.168.1.90";
+    private static final String JACKFRUIT_VERSION = "v0.1-alpha";
+
+    // private static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME =
+    // "192.168.1.90";
     static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME = "jacktrip.local";
 
     static final String DEFAULT_PASSWORD = "jacktrip";
@@ -56,7 +63,15 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
     public static final String DEFAULT_LOOPBACK_TEST_SERVER = "13.52.186.20";
 
+    static final String JACKFRUIT_TEST_SERVER = "jackfruit.testServer";
+
+    private static final String DEFAULT_ICON_IMAGE = "jackfruit-icon.png";
+
     private final Command[] commands;
+
+    private boolean setIcon = false;
+
+    private ExecutorService commandExecutor = Executors.newSingleThreadExecutor();
 
     private final class MyAuthenticator implements Authenticator {
         private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -101,24 +116,6 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         }
     }
 
-    public enum ConnectionState {
-        UNKNOWN, DISCONNECTED, CONNECTING, CONNECTED,
-    }
-
-    public class JackfruitConnectionEvent extends AbstractEbEvent {
-        private ConnectionState connectionState;
-
-        public JackfruitConnectionEvent(ConnectionState connectionState) {
-            super();
-            this.connectionState = connectionState;
-        }
-
-        @Override
-        public String toString() {
-            return "JackfruitEvent [connectionState=" + connectionState + "]";
-        }
-    }
-
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
     private JMenuItem connectionMenuItem;
     private JackTripConnection jackTripConnection;
@@ -134,15 +131,18 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
     private boolean appIsReady = false;
     private JackfruitEventListener jackfruitEventListener;
     private boolean autoLogin = true;
-    private JLabel statusLabel;
-    private JTextField commandTf;
-    private JButton commandButton;
 
-    private DefaultComboBoxModel<Command> commandsModel;
+    private JLabel leftStatusLabel;
+    private JLabel rightStatusLabel;
+
+//    private JTextField commandTf;
+    private JButton commandButton;
 
     private JComboBox<Command> commandsComboBox;
 
-    static final String JACKFRUIT_TEST_SERVER = "jackfruit.testServer";
+    private long commandStart = -1L;
+
+    private Timer scheduledTimer;
 
     public JackFruitMain(String title) throws HeadlessException {
         super(title);
@@ -154,6 +154,8 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        setIcon();
+
         JMenuBar menuBar = new JMenuBar();
         setJMenuBar(menuBar);
         buildMenuBar(menuBar);
@@ -163,6 +165,66 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         this.authenticator = new MyAuthenticator();
 
         addWindowListener(this);
+
+        this.scheduledTimer = new javax.swing.Timer(1000, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("SCHEDULE, commandStart=" + commandStart);
+                }
+                if (commandStart >= 0L) {
+                    final long delta = (System.currentTimeMillis() - commandStart);
+                    if (commandStart >= 0L) {
+                        leftStatusLabel.setText("Running ... " + delta + "ms ...");
+                    }
+                }
+            }
+        });
+        this.scheduledTimer.start();
+    }
+
+    private void setIcon() {
+        if (!setIcon) {
+            return;
+        }
+
+        // loading an image from a file
+        final Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
+        String imageName = DEFAULT_ICON_IMAGE;
+        final URL imageResource = JackFruitMain.class.getClassLoader().getResource(imageName);
+        if (imageResource == null) {
+            LOGGER.warn("Cannot find icon image=" + imageName);
+            return;
+        }
+
+        final Image image = defaultToolkit.getImage(imageResource);
+
+        if (image == null) {
+            LOGGER.warn("Cannot find icon image=" + imageName);
+            return;
+        }
+
+        LOGGER.info("Found icon image=" + imageName);
+
+        if (Taskbar.isTaskbarSupported()) {
+            LOGGER.info("Setting taskbar icon.");
+
+            // this is new since JDK 9
+            final Taskbar taskbar = Taskbar.getTaskbar();
+            try {
+                // set icon for mac os (and other systems which do support this method)
+                taskbar.setIconImage(image);
+            } catch (final UnsupportedOperationException e) {
+                LOGGER.warn("The os does not support: 'taskbar.setIconImage'");
+            } catch (final SecurityException e) {
+                LOGGER.warn("There was a security exception for: 'taskbar.setIconImage'");
+            }
+        }
+
+        // set icon for windows os (and other systems which do support this method)
+        LOGGER.info("Setting frame icon.");
+        this.setIconImage(image);
+
     }
 
     protected Command[] createCommands() {
@@ -314,8 +376,8 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
     private void updateConnectionUi() {
         setConnectionMenuItemText(this.connectionState);
-        if (this.statusLabel != null) {
-            this.statusLabel.setText(this.connectionState.toString());
+        if (this.rightStatusLabel != null) {
+            this.rightStatusLabel.setText(this.connectionState.toString());
         }
     }
 
@@ -374,41 +436,58 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
         parent.add(view);
 
+        // command view
+        createCommandView(view);
+
+        // console view
+        createConsoleView(view);
+
+        // status view
+        createStatusView(view);
+    }
+
+    private void createCommandView(JPanel parent) {
+        Border border;
         JPanel commandView = new JPanel();
         commandView.setLayout(new BoxLayout(commandView, BoxLayout.LINE_AXIS));
         border = BorderFactory.createTitledBorder("Command");
         commandView.setBorder(border);
 
-        view.add(commandView, BorderLayout.NORTH);
-        commandsModel = new DefaultComboBoxModel<>();
-        commandsModel.addAll(Arrays.asList(commands));
-        commandsComboBox = new JComboBox<>(commandsModel);
+        parent.add(commandView, BorderLayout.NORTH);
+
+        final JTextField textField = new JTextField(20);
+
+//      private DefaultComboBoxModel<Command> commandsModel;
+        DefaultComboBoxModel<Command> model = new DefaultComboBoxModel<>();
+        model.addAll(Arrays.asList(commands));
+        commandsComboBox = new JComboBox<>(model);
         commandsComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Command command = (Command) commandsComboBox.getSelectedItem();
                 LOGGER.info("COMMAND - SELECTED - " + command.getCommand());
-                commandTf.setText(command.getCommand());
+                textField.setText(command.getCommand());
                 if (connectionState == ConnectionState.CONNECTED) {
                     commandButton.setEnabled(true);
                 }
                 String comment = command.getComment();
                 textArea.setText("");
+                textArea.append("# About this command:\n\n");
                 if ((comment != null) && (comment.length() > 0)) {
                     textArea.append(comment);
                 }
+                textArea.append("\n# Click 'Run' to run this command.\n");
             }
         });
         commandView.add(commandsComboBox);
 
-        this.commandTf = new JTextField(20);
-        commandView.add(commandTf);
+        commandView.add(textField);
 
         this.commandButton = new JButton(new AbstractAction("Run") {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                String command = commandTf.getText();
+                String command = textField.getText();
                 if (command != null) {
                     command = command.trim();
                 }
@@ -419,29 +498,38 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
         });
         commandButton.setEnabled(false);
         commandView.add(commandButton);
+    }
 
+    private void createConsoleView(JPanel parent) {
         textArea = new RSyntaxTextArea();
 
-        // textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
+        textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_PYTHON);
         RTextScrollPane sp = new RTextScrollPane(textArea);
-        // accountJsonTextArea = textArea;
         textArea.setEditable(false);
         textArea.setLineWrap(false);
 
-        view.add(sp, BorderLayout.CENTER);
+        parent.add(sp, BorderLayout.CENTER);
+    }
 
-        JPanel statusView = new JPanel();
-        statusView.setLayout(new BoxLayout(statusView, BoxLayout.LINE_AXIS));
-        this.statusLabel = new JLabel(this.connectionState.toString());
-        statusView.add(Box.createHorizontalGlue());
-        statusView.add(this.statusLabel);
-        view.add(statusView, BorderLayout.SOUTH);
+    private void createStatusView(JPanel parent) {
+        JPanel view = new JPanel();
+        view.setLayout(new BoxLayout(view, BoxLayout.LINE_AXIS));
+
+        this.leftStatusLabel = new JLabel("");
+        view.add(this.leftStatusLabel);
+        view.add(Box.createHorizontalGlue());
+
+        this.rightStatusLabel = new JLabel(this.connectionState.toString());
+        view.add(Box.createHorizontalGlue());
+        view.add(this.rightStatusLabel);
+
+        parent.add(view, BorderLayout.SOUTH);
     }
 
     public static void main(String[] args) {
         LOGGER.info("> main");
 
-        String title = "jackfruit";
+        String title = "jackfruit - " + JackFruitMain.getVersion();
         final JackFruitMain main = new JackFruitMain(title);
         Runnable doRun = new Runnable() {
             @Override
@@ -450,6 +538,10 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
             }
         };
         SwingUtilities.invokeLater(doRun);
+    }
+
+    private static String getVersion() {
+        return JACKFRUIT_VERSION;
     }
 
     protected void showMainFrame() {
@@ -588,22 +680,34 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
     private void runCommand(final String command) {
         textArea.setText("Running command=" + command + " ...\n");
-        SwingUtilities.invokeLater(new Runnable() {
+        leftStatusLabel.setText("Running ...");
+        this.commandStart = System.currentTimeMillis();
+
+        commandExecutor.execute(new Runnable() {
 
             @Override
             public void run() {
+                String result = null;
+                final long start = System.currentTimeMillis();
                 try {
-                    String result = jackTripConnection.runCommand(command);
-                    textArea.append("\n");
-                    textArea.append(result);
-                } catch (JSchException e) {
+                    result = jackTripConnection.runCommand(command);
+                } catch (Exception e) {
                     LOGGER.info(e, e);
-                    textArea.append("\n");
-                    textArea.append(e.getMessage());
-                } catch (IOException e) {
-                    LOGGER.info(e, e);
-                    textArea.append("\n");
-                    textArea.append(e.getMessage());
+                    result = e.getMessage();
+                } finally {
+                    commandStart = -1L;
+                    final String message = result;
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            textArea.append("\n");
+                            textArea.append(message);
+
+                            long delta = System.currentTimeMillis() - start;
+
+                            leftStatusLabel.setText("DONE, last command took " + delta + "ms.");
+                        }
+                    });
                 }
             }
         });
