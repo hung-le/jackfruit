@@ -6,4 +6,4 @@ mkdir out
 
 copy ..\target\jackfruit-0.0.1-SNAPSHOT.jar in
 
-jpackage --dest ./out --verbose -i ./in --name jackfruit --main-jar jackfruit-0.0.1-SNAPSHOT.jar --add-modules java.base,java.logging,java.xml,java.sql,java.prefs,java.desktop,java.management,java.naming --app-version 0.1 --vendor "Hung Le" --win-shortcut --type msi
+jpackage --dest ./out --verbose -i ./in --name jackfruit --main-jar jackfruit-0.0.1-SNAPSHOT.jar --add-modules java.base,java.logging,java.xml,java.sql,java.prefs,java.desktop,java.management,java.naming --app-version 1.0.2 --vendor "Hung Le" --win-shortcut --type msi

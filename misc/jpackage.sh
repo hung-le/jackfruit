@@ -19,7 +19,7 @@ ${jpackage} \
   --dest ${dest} \
   --verbose \
   -i ${in} \
-  --app-version 0.1 \
+  --app-version 1.0.2 \
   --vendor 'Hung Le' \
   --name jackfruit \
   --main-jar jackfruit-0.0.1-SNAPSHOT.jar

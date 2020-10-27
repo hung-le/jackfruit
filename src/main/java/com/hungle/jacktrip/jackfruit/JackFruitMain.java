@@ -51,7 +51,7 @@ import com.jcraft.jsch.JSchException;
 public class JackFruitMain extends JFrame implements WindowListener, JackFruitEventHandler {
     private static final Logger LOGGER = LogManager.getLogger(JackFruitMain.class);
 
-    private static final String JACKFRUIT_VERSION = "v0.1-alpha (Build 011)";
+    private static final String JACKFRUIT_VERSION = "v1.0.2-alpha (Build 012)";
 
     // private static final String DEFAULT_JACKTRIP_DEVICE_HOSTNAME =
     // "192.168.1.90";
