@@ -61,7 +61,7 @@ public class JackFruitMain extends JFrame implements WindowListener, JackFruitEv
 
     static final String DEFAULT_USERNAME = "pi";
 
-    public static final String DEFAULT_LOOPBACK_TEST_SERVER = "13.52.186.20";
+    public static final String DEFAULT_LOOPBACK_TEST_SERVER = "portquiz.net";
 
     static final String JACKFRUIT_TEST_SERVER = "jackfruit.testServer";
 
