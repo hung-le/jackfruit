@@ -35,7 +35,7 @@ public class Commands {
                 new Command("Network - Ping loopback test server",
                         "/usr/bin/ping -c 3 " + JackFruitMain.getLoopbackTestServer(),
                         "To ping the loopback test server. Note the IP might need to be adjusted.\n"),
-                // netcat -zv -w 5 13.52.186.20 4464
+                // netcat -zv -w 5 portquiz.net 4464
                 new Command("Network - Check TCP port 4464",
                         "/usr/bin/netcat -zv -w 5 " + JackFruitMain.getLoopbackTestServer() + " 4464",
                         "Check to see if TCP connection can be made to the loopback test server.\nNote the IP might need to be adjusted.\n"),
